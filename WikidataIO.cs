@@ -24,8 +24,8 @@ namespace WikiAccess
                 return Param;
             }
         }
-
-        public WikidataIO() { }
+        public WikidataIOErrorLog DErrors { get; set; }
+        public WikidataExtractErrorLog EErrors { get; set; }
 
         public string Action { get; set; }
         public string Format { get; set; }
@@ -35,11 +35,36 @@ namespace WikiAccess
         public string Languages { get; set; }
         public string[] ClaimsRequired { get; set; }
 
+        public WikidataIO() : base()
+        {
+            DErrors = new WikidataIOErrorLog();
+        }
+
         public WikidataFields GetData()
         {
-            GrabPage();
-            WikidataExtract Item = new WikidataExtract(Content,ClaimsRequired);
-            return  Item.Fields;
+            if (GrabPage())
+            {
+                WikidataExtract Item = new WikidataExtract(Content, ClaimsRequired);
+                EErrors = Item.Errors;
+                if (Item.Success)
+                    return Item.Fields;
+                else
+                    return null;
+            }
+            else
+            {
+                DErrors.UnableToRetrieveData();
+                return null;
+            }
+        }
+
+        public List<ErrorLog> GetErrors()
+        {
+            List<ErrorLog> Logs = new List<ErrorLog>();
+            Logs.Add(AErrors);
+            Logs.Add(DErrors);
+            Logs.Add(EErrors);
+            return Logs;
         }
 
 

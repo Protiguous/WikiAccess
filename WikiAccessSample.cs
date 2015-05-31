@@ -9,7 +9,7 @@ namespace WikiAccess
     {
         static void Main(string[] args)
         {
-            int Qcode = 83235;  // Horatio Nelson
+            int Qcode = 255011; 
 
             WikidataIO WIO = new WikidataIO();
             WIO.Action = "wbgetentities";
@@ -21,6 +21,25 @@ namespace WikiAccess
             WIO.ClaimsRequired = new string[5] { "P31", "P27", "P21", "P569", "P570" };
 
             WikidataFields Fields = WIO.GetData();
+
+            if (Fields == null)
+            {
+                List<ErrorLog> Errors = new List<ErrorLog>();
+                Errors = WIO.GetErrors();
+
+                foreach (ErrorLog thisLog in Errors)
+                {
+                    if (thisLog != null)
+                    {
+                        foreach (ErrorMessage Error in thisLog.Errors)
+                        {
+                            Console.WriteLine(Error.ToString());
+                        }
+                    }
+                }
+                return;
+            }
+
             string ThisName;
             if (!Fields.Labels.TryGetValue("en-gb", out ThisName))
                 Fields.Labels.TryGetValue("en", out ThisName);
@@ -29,8 +48,13 @@ namespace WikiAccess
             if (!Fields.Description.TryGetValue("en-gb", out ThisDescription))
                 Fields.Description.TryGetValue("en", out ThisDescription);
 
+            string ThisWikipedia;
+                Fields.WikipediaLinks.TryGetValue("enwiki", out ThisWikipedia);
+
             Console.WriteLine(ThisName);
             Console.WriteLine(ThisDescription);
+
+            Console.WriteLine("------------------");
 
 
             WikipediaIO WPIO = new WikipediaIO();
@@ -39,7 +63,7 @@ namespace WikiAccess
             WPIO.ExportNoWrap = "Yes";
             WPIO.Format = "xml";
             WPIO.Redirects = "yes";
-            WPIO.Titles = "Steffi Graf";
+            WPIO.Titles = ThisWikipedia;
 
             string Article = WPIO.GetData();
             List<string> Templates = WPIO.ExtractTemplates();

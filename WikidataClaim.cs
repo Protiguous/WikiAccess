@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections;
 
 namespace WikiAccess
 {
@@ -10,7 +11,7 @@ namespace WikiAccess
     /// <summary>
     /// Container to hold a Wikidata claim. 
     /// </summary>
-    public class WikidataClaim
+    public class WikidataClaim 
     {
         private string _ValueAsString;
         private int _ValueAsInt;

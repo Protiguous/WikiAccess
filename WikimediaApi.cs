@@ -20,10 +20,17 @@ namespace WikiAccess
         private const string BOTNAME = "Perigliobot";
         private const string CONTACT = "Wikidata@lynxmail.co.uk";
 
+        public WikiMediaApiErrorLog AErrors { get; set; }
+
         protected string Content { get; private set; }
 
         protected abstract string APIurl { get; }
         protected abstract string Parameters { get; }
+
+        public WikimediaApi()
+        {
+            AErrors = new WikiMediaApiErrorLog();
+        }
 
         /// <summary>
         /// Make sure we wait a second between calls.
@@ -42,20 +49,36 @@ namespace WikiAccess
         /// Method used to grab page from Wiki website, and store into Content property.
         /// </summary>
         /// <returns></returns>
-        protected void GrabPage()
+        protected bool GrabPage()
         {
             ThrottleWikiAccess();
-            LoadPage(DownloadPage());
+            return LoadPage(DownloadPage());
         }
 
         /// <summary>
         /// Read page from download, store in Content property
         /// </summary>
         /// <param name="tempfile"></param>
-        private void LoadPage(string tempfile)
+        private bool LoadPage(string tempfile)
         {
-            Content = File.ReadAllText(tempfile);
-            File.Delete(tempfile);
+            if (tempfile == null)
+            {
+                return false;
+            }
+            else
+            {
+                try
+                {
+                    Content = File.ReadAllText(tempfile);
+                    File.Delete(tempfile);
+                }
+                catch (Exception e)
+                {
+                    AErrors.UnableToRetrieveDownload(e.Message);
+                    return false;
+                }
+                return true;
+            }
         }
 
         /// <summary>
@@ -68,15 +91,16 @@ namespace WikiAccess
 
             WebClient wikiClient = new WebClient();
             wikiClient.Headers.Add("user-agent", BOTNAME + " Contact: " + CONTACT + ")");
+            string FullURL = APIurl + Parameters;
 
             try
             {
-                string FullURL = APIurl + Parameters;
                 wikiClient.DownloadFile(FullURL, Tempfile);
             }
-            catch
+            catch(WebException e)
             {
                 Tempfile = null;
+                AErrors.CannotAccessWiki(FullURL,e.Message);
             }
 
             return Tempfile;
