@@ -11,3 +11,15 @@ namespace WikiAccess
         List<ErrorMessage> Errors { get; set; }
     }
 }
+
+/*
+ * A = WikimediaAPI
+ * B = WikidataBiography
+ * C = Category
+ * D = WikidataIO
+ * E = WikidataExtract
+ * G = WikipediaBiography
+ * T = Template
+ * W = WikipediaIO
+ * 
+ */

@@ -13,7 +13,8 @@ namespace WikiAccess
         protected override string APIurl { get { return @"http://www.Wikidata.org/w/api.php?"; } }
         protected override string Parameters
         {
-            get { 
+            get
+            {
                 string Param = "action=" + Action;
                 if (Format != "") Param += "&format=" + Format;
                 if (Sites != "") Param += "&sites=" + Sites;
@@ -35,7 +36,8 @@ namespace WikiAccess
         public string Languages { get; set; }
         public string[] ClaimsRequired { get; set; }
 
-        public WikidataIO() : base()
+        public WikidataIO()
+            : base()
         {
             DErrors = new WikidataIOErrorLog();
         }
@@ -66,8 +68,5 @@ namespace WikiAccess
             Logs.Add(EErrors);
             return Logs;
         }
-
-
-
     }
 }

@@ -9,7 +9,7 @@ namespace WikiAccess
     {
         static void Main(string[] args)
         {
-            int Qcode = 255011; 
+            int Qcode = 15818798; 
 
             WikidataIO WIO = new WikidataIO();
             WIO.Action = "wbgetentities";
@@ -22,23 +22,24 @@ namespace WikiAccess
 
             WikidataFields Fields = WIO.GetData();
 
-            if (Fields == null)
-            {
-                List<ErrorLog> Errors = new List<ErrorLog>();
-                Errors = WIO.GetErrors();
+            Console.WriteLine("-----Errors-----");
+            List<ErrorLog> Errors = new List<ErrorLog>();
+            Errors = WIO.GetErrors();
 
-                foreach (ErrorLog thisLog in Errors)
+            foreach (ErrorLog thisLog in Errors)
+            {
+                if (thisLog != null)
                 {
-                    if (thisLog != null)
+                    foreach (ErrorMessage Error in thisLog.Errors)
                     {
-                        foreach (ErrorMessage Error in thisLog.Errors)
-                        {
-                            Console.WriteLine(Error.ToString());
-                        }
+                        Console.WriteLine(Error.ToString());
                     }
                 }
-                return;
             }
+
+
+            if (Fields == null)
+                return;
 
             string ThisName;
             if (!Fields.Labels.TryGetValue("en-gb", out ThisName))
@@ -54,7 +55,7 @@ namespace WikiAccess
             Console.WriteLine(ThisName);
             Console.WriteLine(ThisDescription);
 
-            Console.WriteLine("------------------");
+            Console.WriteLine("====================");
 
 
             WikipediaIO WPIO = new WikipediaIO();
@@ -65,16 +66,29 @@ namespace WikiAccess
             WPIO.Redirects = "yes";
             WPIO.Titles = ThisWikipedia;
 
-            string Article = WPIO.GetData();
-            List<string> Templates = WPIO.ExtractTemplates();
-            List<string> Categories = WPIO.ExtractCategories();
+            if (WPIO.GetData())
+            {
+                List<string> Templates = WPIO.Templates;
+                List<string> Categories = WPIO.Categories;
 
-            Console.WriteLine(WPIO.PageTitle);
-            Console.WriteLine(Templates.Count().ToString() + " templates");
-            Console.WriteLine(Categories.Count().ToString() + " categories");
+                Console.WriteLine(WPIO.PageTitle);
+                Console.WriteLine(Templates.Count().ToString() + " templates");
+                Console.WriteLine(Categories.Count().ToString() + " categories");
+            }
 
+            List<ErrorLog> Errors2 = new List<ErrorLog>();
+            Errors2 = WPIO.GetErrors();
 
-
+            foreach (ErrorLog thisLog in Errors2)
+            {
+                if (thisLog != null)
+                {
+                    foreach (ErrorMessage Error in thisLog.Errors)
+                    {
+                        Console.WriteLine(Error.ToString());
+                    }
+                }
+            }
         }
     }
 }

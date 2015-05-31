@@ -13,6 +13,7 @@ namespace WikiAccess
         public WikidataExtractErrorLog()
         {
             Errors = new List<ErrorMessage>();
+//            Errors.Add(new ErrorMessage(Module, 0, "WikidataExtract module"));
         }
 
         public void NotWikidata()

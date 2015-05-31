@@ -13,6 +13,7 @@ namespace WikiAccess
         public WikidataIOErrorLog()
         {
             Errors = new List<ErrorMessage>();
+//            Errors.Add(new ErrorMessage(Module, 0, "WikidataIO module"));
         }
 
         public void UnableToRetrieveData()

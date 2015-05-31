@@ -24,10 +24,10 @@ namespace WikiAccess
             }
         }
 
-        private List<string> Templates = new List<string>();
-        private List<string> Categories = new List<string>();
+        public List<string> Templates;
+        public List<string> Categories;
 
-        private string _PageContent;
+        public string Article { get; set; }
         public string Action { get; set; }
         public string Titles { get; set; }
         public string Format { get; set; }
@@ -35,25 +35,45 @@ namespace WikiAccess
         public string Export { get; set; }
         public string ExportNoWrap { get; set; }
         public string PageTitle { get; set; }
-        public bool WikipediaAvailable { get; set; }
-        public bool WikipediaArticleExists { get; set; }
-        public bool UnbalancedHTMLcomments { get; set; }
+        public WikipediaIOErrorLog WErrors { get; set; }
 
-        public string GetData()
+        public WikipediaIO()
+            : base()
         {
-            GrabPage();
-            ExtractXML();
-            return _PageContent;
+            WErrors = new WikipediaIOErrorLog();
+            Templates = new List<string>();
+            Categories = new List<string>();
         }
 
-        private string ExtractXML()
+        public bool GetData()
         {
-            WikipediaAvailable = false;
-            WikipediaArticleExists = false;
+            if (GrabPage())
+            {
+                if (ExtractXML())
+                {
+                    ExtractCategories();
+                    ExtractTemplates();
+                    return true;
+                }
+                else
+                {
+                    WErrors.UnableToParseXML();
+                    return false;
+                }
+            }
+            else
+            {
+                WErrors.UnableToRetrieveData();
+                return false;
+            }
+        }
+
+        private bool ExtractXML()
+        {
+            bool WikipediaArticleExists = false;
 
             using (XmlReader Reader = XmlReader.Create(new StringReader(Content)))
             {
-
                 string[] thisElementName = new string[5];
                 while (Reader.Read())
                 {
@@ -61,15 +81,6 @@ namespace WikiAccess
                     {
                         case XmlNodeType.Element:
                             thisElementName[Reader.Depth] = Reader.Name;
-
-                            if (thisElementName[0] == "mediawiki")
-                            {
-                                if (thisElementName[1] == "page")
-                                {
-                                    WikipediaAvailable = true;
-                                }
-                            }
-
                             break;
 
                         case XmlNodeType.Text:
@@ -87,7 +98,7 @@ namespace WikiAccess
                                         if (thisElementName[3] == "text")
                                         {
                                             WikipediaArticleExists = true;
-                                            UnbalancedHTMLcomments =  RemoveHTMLcomments(ReplaceDash(RemoveTerminators(Reader.Value)), out _PageContent);
+                                            Article = RemoveHTMLcomments(ReplaceDash(RemoveTerminators(Reader.Value)));
                                         }
                                     }
 
@@ -95,15 +106,19 @@ namespace WikiAccess
                             }
                             break;
                     }
-
                 }
 
-                return _PageContent;
-
+                if (!WikipediaArticleExists)
+                {
+                    WErrors.ArticleNotExists();
+                    return false;
+                }
+                else
+                    return true;
             }
         }
 
-        private bool RemoveHTMLcomments(string OriginalText, out string RevisedText)
+        private string RemoveHTMLcomments(string OriginalText)
         {
             string ThisText = OriginalText;
             int CommentStart = 0;
@@ -117,8 +132,8 @@ namespace WikiAccess
 
                     if (CommentEnd == -1 || CommentEnd < CommentStart)
                     {
-                        RevisedText = ThisText;
-                        return false;
+                        WErrors.UnbalancedHTMLcomment();
+                        return ThisText;
                     }
                     else
                     {
@@ -129,8 +144,7 @@ namespace WikiAccess
 
             } while (CommentStart != -1);
 
-            RevisedText = ThisText;
-            return true;
+            return ThisText;
         }
 
         private string RemoveTerminators(string originalText)
@@ -180,15 +194,14 @@ namespace WikiAccess
             return Output;
         }
 
-        public List<string> ExtractCategories()
+        private void ExtractCategories()
         {
-
-            int catStart = _PageContent.IndexOf("[[Category:", StringComparison.Ordinal);
+            int catStart = Article.IndexOf("[[Category:", StringComparison.Ordinal);
 
             while (catStart > 0)
             {
-                int catNextPipe = _PageContent.IndexOf("|", catStart, StringComparison.Ordinal);
-                int catNextClose = _PageContent.IndexOf("]]", catStart, StringComparison.Ordinal);
+                int catNextPipe = Article.IndexOf("|", catStart, StringComparison.Ordinal);
+                int catNextClose = Article.IndexOf("]]", catStart, StringComparison.Ordinal);
                 int catFinish = 0;
 
                 if (catNextPipe < catNextClose && catNextPipe > 0)
@@ -202,29 +215,25 @@ namespace WikiAccess
 
                 if (catStart != -1 && catFinish != -1 && catFinish > catStart)
                 {
-                    Categories.Add(_PageContent.Substring(catStart + 11, catFinish - catStart - 11).ToLower().Trim());
-                    catStart = _PageContent.IndexOf("[[Category:", catFinish, StringComparison.Ordinal);
+                    Categories.Add(Article.Substring(catStart + 11, catFinish - catStart - 11).ToLower().Trim());
+                    catStart = Article.IndexOf("[[Category:", catFinish, StringComparison.Ordinal);
                 }
                 else
                 {
-                    //Error unbalancedCategoryBrackets;
+                    WErrors.UnbalancedCategoryBrackets();
                     catStart = -99;
                 }
             }
-
-            return Categories;
-
         }
 
-        public List<string> ExtractTemplates()
+        private void ExtractTemplates()
         {
-
-            int tplStart = _PageContent.IndexOf("{{", StringComparison.Ordinal);
+            int tplStart = Article.IndexOf("{{", StringComparison.Ordinal);
 
             while (tplStart >= 0)
             {
-                int tplNextPipe = _PageContent.IndexOf("|", tplStart, StringComparison.Ordinal);
-                int tplNextClose = _PageContent.IndexOf("}}", tplStart, StringComparison.Ordinal);
+                int tplNextPipe = Article.IndexOf("|", tplStart, StringComparison.Ordinal);
+                int tplNextClose = Article.IndexOf("}}", tplStart, StringComparison.Ordinal);
                 int tplFinish = 0;
 
                 if (tplNextPipe < tplNextClose && tplNextPipe > 0)
@@ -238,17 +247,15 @@ namespace WikiAccess
 
                 if (tplStart != -1 && tplFinish != -1 && tplFinish > tplStart)
                 {
-                    Templates.Add(_PageContent.Substring(tplStart + 2, tplFinish - tplStart - 2).ToLower().Trim());
-                    tplStart = _PageContent.IndexOf("{{", tplFinish, StringComparison.Ordinal);
+                    Templates.Add(Article.Substring(tplStart + 2, tplFinish - tplStart - 2).ToLower().Trim());
+                    tplStart = Article.IndexOf("{{", tplFinish, StringComparison.Ordinal);
                 }
                 else
                 {
-                    // Error unbalancedTemplateBrackets
+                    WErrors.UnbalancedTemplateBrackets();
                     tplStart = -99;
                 }
             }
-
-            return Templates;
         }
 
         public static bool DelinkText(string OriginalText, out string RevisedText)
@@ -307,5 +314,12 @@ namespace WikiAccess
             return true;
         }
 
+        public List<ErrorLog> GetErrors()
+        {
+            List<ErrorLog> Logs = new List<ErrorLog>();
+            Logs.Add(AErrors);
+            Logs.Add(WErrors);
+            return Logs;
+        }
     }
 }

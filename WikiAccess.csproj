@@ -63,6 +63,7 @@
     <Compile Include="Wikidate.cs" />
     <Compile Include="WikimediaApi.cs" />
     <Compile Include="WikipediaIO.cs" />
+    <Compile Include="WikipediaIOErrorLog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
