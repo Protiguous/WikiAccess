@@ -14,14 +14,14 @@ namespace WikiAccess
         public Dictionary<string, string> WikipediaLinks { get; set; }
         public Dictionary<string, string> Labels { get; set; }
         public Dictionary<string, string> Description { get; set; }
-        public Dictionary<int, WikidataClaim> Claims { get; set; }
+        public List<KeyValuePair<int, WikidataClaim>> Claims { get; set; }  // Cannot use Dictionary as can have multiple claims per item
 
         public WikidataFields()
         {
             WikipediaLinks = new Dictionary<string, string>();
             Labels = new Dictionary<string, string>();
             Description = new Dictionary<string, string>();
-            Claims = new Dictionary<int, WikidataClaim>();
+            Claims = new List<KeyValuePair<int, WikidataClaim>>();
         }
     }
 }

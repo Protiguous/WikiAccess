@@ -17,13 +17,16 @@ namespace WikiAccess
         private string Content { get; set; }
         public string[] ClaimsRequired { get; set; }
         private WikidataCache Cache = new WikidataCache();
+        public WikidataExtractErrorLog Errors { get; set; }
+        public bool Success { get; set; }
 
-        public WikidataExtract(string content,string[] claimsrequired)
+        public WikidataExtract(string content, string[] claimsrequired)
         {
+            Errors = new WikidataExtractErrorLog();
             ClaimsRequired = claimsrequired;
             Fields = new WikidataFields();
             Content = content;
-            ExtractJSON();
+            Success = ExtractJSON();
         }
 
         /// <summary>
@@ -43,7 +46,7 @@ namespace WikiAccess
 
             if (EntityKey == "-1")
             {
-                // QCode does not exist
+                Errors.NotWikidata();
                 return false;
             }
 
@@ -53,6 +56,7 @@ namespace WikiAccess
 
             if (EntityType == null)
             {
+                Errors.QcodeNotExist(EntityKey);
                 return false;
             }
 
@@ -230,18 +234,12 @@ namespace WikiAccess
 
                                 ThisClaimData.ValueAsString = "(" + ValueLower + " to " + ValueUpper + ") Unit " + ValueUnit;
                             }
-
                         }
-
-                        Fields.Claims.Add(Convert.ToInt32(ClaimKey.Substring(1)),ThisClaimData);
-                    }
-
+                        Fields.Claims.Add(new KeyValuePair<int, WikidataClaim>(Convert.ToInt32(ClaimKey.Substring(1)), ThisClaimData));
+                   }
                 }
             }
-
-
             return true;
         }
-
     }
 }

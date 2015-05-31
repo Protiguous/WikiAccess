@@ -39,7 +39,6 @@ namespace WikiAccess
         public bool WikipediaArticleExists { get; set; }
         public bool UnbalancedHTMLcomments { get; set; }
 
-
         public string GetData()
         {
             GrabPage();
@@ -147,7 +146,6 @@ namespace WikiAccess
             return newText;
         }
 
-
         private string ReplaceDash(string original)
         {
             string Output = original;
@@ -217,7 +215,6 @@ namespace WikiAccess
             return Categories;
 
         }
-
 
         public List<string> ExtractTemplates()
         {
