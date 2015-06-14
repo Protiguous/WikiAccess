@@ -128,7 +128,9 @@ namespace WikiAccess
                             else if (SnakDataType == "wikibase-item")
                             {
                                 var ObjectValue = (JObject)SnakDataValue["value"];
-                                ThisClaimData.ValueAsString = Cache.RetrieveLabel((int)ObjectValue["numeric-id"]);
+                                ThisClaimData.Qcode = (int)ObjectValue["numeric-id"];
+                                ThisClaimData.ValueAsString = Cache.RetrieveLabel(ThisClaimData.Qcode);
+
                             }
                             else if (SnakDataType == "time")
                             {

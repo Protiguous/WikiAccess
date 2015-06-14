@@ -11,14 +11,15 @@ namespace WikiAccess
     /// <summary>
     /// Container to hold a Wikidata claim. 
     /// </summary>
-    public class WikidataClaim 
+    public class WikidataClaim
     {
         private string _ValueAsString;
         private int _ValueAsInt;
         private Wikidate _ValueAsDateTime;
 
+        public int Qcode { get; set; }
         public int Pcode { get; set; }
-        public ClaimType Type { private set;  get; }
+        public ClaimType Type { private set; get; }
         public Wikidate ValueAsDateTime
         {
             get
@@ -62,6 +63,7 @@ namespace WikiAccess
         {
             _ValueAsDateTime = new Wikidate();
             Type = new ClaimType();
+            Qcode = 0;
         }
         public override string ToString()
         {

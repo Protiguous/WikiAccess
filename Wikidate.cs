@@ -53,5 +53,21 @@ namespace WikiAccess
             }
             return FormattedDate;
         }
+
+        public static bool isCalculatable(DatePrecision thisPrecision)
+        {
+            switch (thisPrecision)
+            {
+                case DatePrecision.Day:
+                case DatePrecision.Decade:
+                case DatePrecision.Month:
+                case DatePrecision.Year:
+                    return true;
+
+                default:
+                    return false;
+
+            }
+        }
     }
 }
