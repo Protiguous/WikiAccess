@@ -20,7 +20,7 @@ namespace WikiAccess
         private const string BOTNAME = "Perigliobot";
         private const string CONTACT = "Wikidata@lynxmail.co.uk";
 
-        public WikiMediaApiErrorLog AErrors { get; set; }
+        protected WikiMediaApiErrorLog APIErrors { get; set; }
 
         protected string Content { get; private set; }
 
@@ -29,7 +29,7 @@ namespace WikiAccess
 
         public WikimediaApi()
         {
-            AErrors = new WikiMediaApiErrorLog();
+            APIErrors = new WikiMediaApiErrorLog();
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace WikiAccess
                 }
                 catch (Exception e)
                 {
-                    AErrors.UnableToRetrieveDownload(e.Message);
+                    APIErrors.UnableToRetrieveDownload(e.Message);
                     return false;
                 }
                 return true;
@@ -100,7 +100,7 @@ namespace WikiAccess
             catch(WebException e)
             {
                 Tempfile = null;
-                AErrors.CannotAccessWiki(FullURL,e.Message);
+                APIErrors.CannotAccessWiki(FullURL,e.Message);
             }
 
             return Tempfile;

@@ -25,8 +25,8 @@ namespace WikiAccess
                 return Param;
             }
         }
-        public WikidataIOErrorLog DErrors { get; set; }
-        public WikidataExtractErrorLog EErrors { get; set; }
+        private WikidataIOErrorLog WikidataErrors { get; set; }
+        private ErrorLog ExternalErrors { get; set; }
 
         public string Action { get; set; }
         public string Format { get; set; }
@@ -39,7 +39,7 @@ namespace WikiAccess
         public WikidataIO()
             : base()
         {
-            DErrors = new WikidataIOErrorLog();
+            WikidataErrors = new WikidataIOErrorLog();
         }
 
         public WikidataFields GetData()
@@ -47,7 +47,7 @@ namespace WikiAccess
             if (GrabPage())
             {
                 WikidataExtract Item = new WikidataExtract(Content, ClaimsRequired);
-                EErrors = Item.Errors;
+                ExternalErrors = Item.WikidataExtractErrors;
                 if (Item.Success)
                     return Item.Fields;
                 else
@@ -55,7 +55,7 @@ namespace WikiAccess
             }
             else
             {
-                DErrors.UnableToRetrieveData();
+                WikidataErrors.UnableToRetrieveData();
                 return null;
             }
         }
@@ -63,9 +63,9 @@ namespace WikiAccess
         public List<ErrorLog> GetErrors()
         {
             List<ErrorLog> Logs = new List<ErrorLog>();
-            Logs.Add(AErrors);
-            Logs.Add(DErrors);
-            Logs.Add(EErrors);
+            Logs.Add(APIErrors);
+            Logs.Add(WikidataErrors);
+            Logs.Add(ExternalErrors);
             return Logs;
         }
     }

@@ -13,7 +13,9 @@ namespace WikiAccess
         public WikiMediaApiErrorLog()
         {
             Errors = new List<ErrorMessage>();
-//            Errors.Add(new ErrorMessage(Module, 0, "WikimediaAPI module"));
+#if DEBUG
+            Errors.Add(new ErrorMessage(Module, 0, "WikimediaAPI module"));
+#endif
         }
 
         /// <summary>

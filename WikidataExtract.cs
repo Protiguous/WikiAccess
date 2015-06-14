@@ -17,12 +17,12 @@ namespace WikiAccess
         private string Content { get; set; }
         public string[] ClaimsRequired { get; set; }
         private WikidataCache Cache = new WikidataCache();
-        public WikidataExtractErrorLog Errors { get; set; }
+        public WikidataExtractErrorLog WikidataExtractErrors { get; set; }
         public bool Success { get; set; }
 
         public WikidataExtract(string content, string[] claimsrequired)
         {
-            Errors = new WikidataExtractErrorLog();
+            WikidataExtractErrors = new WikidataExtractErrorLog();
             ClaimsRequired = claimsrequired;
             Fields = new WikidataFields();
             Content = content;
@@ -46,7 +46,7 @@ namespace WikiAccess
 
             if (EntityKey == "-1")
             {
-                Errors.NotWikidata();
+                WikidataExtractErrors.NotWikidata();
                 return false;
             }
 
@@ -56,7 +56,7 @@ namespace WikiAccess
 
             if (EntityType == null)
             {
-                Errors.QcodeNotExist(EntityKey);
+                WikidataExtractErrors.QcodeNotExist(EntityKey);
                 return false;
             }
 

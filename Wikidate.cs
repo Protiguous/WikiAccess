@@ -54,7 +54,7 @@ namespace WikiAccess
             return FormattedDate;
         }
 
-        public static bool isCalculatable(DatePrecision thisPrecision)
+        public static bool isCalculable(DatePrecision thisPrecision)
         {
             switch (thisPrecision)
             {

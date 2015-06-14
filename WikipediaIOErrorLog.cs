@@ -5,6 +5,9 @@ using System.Text;
 
 namespace WikiAccess
 {
+    /// <summary>
+    /// Class to store errors pertaining to Wikipedia IO
+    /// </summary>
     public class WikipediaIOErrorLog : ErrorLog
     {
         public string Module { get { return "W"; } }
@@ -13,7 +16,9 @@ namespace WikiAccess
         public WikipediaIOErrorLog()
         {
             Errors = new List<ErrorMessage>();
-//            Errors.Add(new ErrorMessage(Module, 0, "WikipediaIO module"));
+#if DEBUG
+            Errors.Add(new ErrorMessage(Module, 0, "WikipediaIO module"));
+#endif
         }
 
         public void UnableToRetrieveData()

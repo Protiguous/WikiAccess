@@ -6,6 +6,9 @@ using System.Xml;
 
 namespace WikiAccess
 {
+    /// <summary>
+    /// Class to retrieve a Wikipedia page
+    /// </summary>
     public class WikipediaIO : WikimediaApi
     {
         protected override string APIurl { get { return @"http://en.wikipedia.org/w/api.php?"; } }
@@ -35,16 +38,20 @@ namespace WikiAccess
         public string Export { get; set; }
         public string ExportNoWrap { get; set; }
         public string PageTitle { get; set; }
-        public WikipediaIOErrorLog WErrors { get; set; }
+        private WikipediaIOErrorLog WikipediaErrors { get; set; }
 
         public WikipediaIO()
             : base()
         {
-            WErrors = new WikipediaIOErrorLog();
+            WikipediaErrors = new WikipediaIOErrorLog();
             Templates = new List<string>();
             Categories = new List<string>();
         }
 
+        /// <summary>
+        /// Download a page from Wikipedia and process
+        /// </summary>
+        /// <returns>True = success</returns>
         public bool GetData()
         {
             if (GrabPage())
@@ -57,17 +64,21 @@ namespace WikiAccess
                 }
                 else
                 {
-                    WErrors.UnableToParseXML();
+                    WikipediaErrors.UnableToParseXML();
                     return false;
                 }
             }
             else
             {
-                WErrors.UnableToRetrieveData();
+                WikipediaErrors.UnableToRetrieveData();
                 return false;
             }
         }
 
+        /// <summary>
+        /// Extract the article from the downloaded XML content
+        /// </summary>
+        /// <returns></returns>
         private bool ExtractXML()
         {
             bool WikipediaArticleExists = false;
@@ -110,7 +121,7 @@ namespace WikiAccess
 
                 if (!WikipediaArticleExists)
                 {
-                    WErrors.ArticleNotExists();
+                    WikipediaErrors.ArticleNotExists();
                     return false;
                 }
                 else
@@ -132,7 +143,7 @@ namespace WikiAccess
 
                     if (CommentEnd == -1 || CommentEnd < CommentStart)
                     {
-                        WErrors.UnbalancedHTMLcomment();
+                        WikipediaErrors.UnbalancedHTMLcomment();
                         return ThisText;
                     }
                     else
@@ -220,7 +231,7 @@ namespace WikiAccess
                 }
                 else
                 {
-                    WErrors.UnbalancedCategoryBrackets();
+                    WikipediaErrors.UnbalancedCategoryBrackets();
                     catStart = -99;
                 }
             }
@@ -252,12 +263,17 @@ namespace WikiAccess
                 }
                 else
                 {
-                    WErrors.UnbalancedTemplateBrackets();
+                    WikipediaErrors.UnbalancedTemplateBrackets();
                     tplStart = -99;
                 }
             }
         }
-
+        /// <summary>
+        /// Function to remove Wikipedia style [[links]]
+        /// </summary>
+        /// <param name="OriginalText"></param>
+        /// <param name="RevisedText"></param>
+        /// <returns></returns>
         public static bool DelinkText(string OriginalText, out string RevisedText)
         {
             string thisText = OriginalText;
@@ -317,8 +333,8 @@ namespace WikiAccess
         public List<ErrorLog> GetErrors()
         {
             List<ErrorLog> Logs = new List<ErrorLog>();
-            Logs.Add(AErrors);
-            Logs.Add(WErrors);
+            Logs.Add(APIErrors);
+            Logs.Add(WikipediaErrors);
             return Logs;
         }
     }
