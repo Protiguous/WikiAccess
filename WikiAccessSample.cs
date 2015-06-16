@@ -68,8 +68,8 @@ namespace WikiAccess
 
             if (WPIO.GetData())
             {
-                List<string> Templates = WPIO.Templates;
-                List<string> Categories = WPIO.Categories;
+                List<string[]> Templates = WPIO.TemplatesUsed;
+                List<string> Categories = WPIO.CategoriesUsed;
 
                 Console.WriteLine(WPIO.PageTitle);
                 Console.WriteLine(Templates.Count().ToString() + " templates");

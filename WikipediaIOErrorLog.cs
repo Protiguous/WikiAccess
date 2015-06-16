@@ -50,5 +50,10 @@ namespace WikiAccess
         {
             Errors.Add(new ErrorMessage(Module,6, "Unbalanced Template brackets"));
         }
+
+        public void UnableToExtractTemplate(string templateName)
+        {
+            Errors.Add(new ErrorMessage(Module, 7, "Unable to extract template " + templateName));
+        }
     }
 }

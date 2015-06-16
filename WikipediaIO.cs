@@ -27,8 +27,8 @@ namespace WikiAccess
             }
         }
 
-        public List<string> Templates;
-        public List<string> Categories;
+        public List<string[]> TemplatesUsed;
+        public List<string> CategoriesUsed;
 
         public string Article { get; set; }
         public string Action { get; set; }
@@ -44,8 +44,8 @@ namespace WikiAccess
             : base()
         {
             WikipediaErrors = new WikipediaIOErrorLog();
-            Templates = new List<string>();
-            Categories = new List<string>();
+            TemplatesUsed = new List<string[]>();
+            CategoriesUsed = new List<string>();
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace WikiAccess
 
                 if (catStart != -1 && catFinish != -1 && catFinish > catStart)
                 {
-                    Categories.Add(Article.Substring(catStart + 11, catFinish - catStart - 11).ToLower().Trim());
+                    CategoriesUsed.Add(Article.Substring(catStart + 11, catFinish - catStart - 11).ToLower().Trim());
                     catStart = Article.IndexOf("[[Category:", catFinish, StringComparison.Ordinal);
                 }
                 else
@@ -239,32 +239,38 @@ namespace WikiAccess
 
         private void ExtractTemplates()
         {
-            int tplStart = Article.IndexOf("{{", StringComparison.Ordinal);
+            int TplStart = Article.IndexOf("{{", StringComparison.Ordinal);
 
-            while (tplStart >= 0)
+            while (TplStart >= 0)
             {
-                int tplNextPipe = Article.IndexOf("|", tplStart, StringComparison.Ordinal);
-                int tplNextClose = Article.IndexOf("}}", tplStart, StringComparison.Ordinal);
-                int tplFinish = 0;
+                int TplNextPipe = Article.IndexOf("|", TplStart, StringComparison.Ordinal);
+                int TplNextClose = Article.IndexOf("}}", TplStart, StringComparison.Ordinal);
+                int TplFinish = 0;
 
-                if (tplNextPipe < tplNextClose && tplNextPipe > 0)
+                if (TplNextPipe < TplNextClose && TplNextPipe > 0)
                 {
-                    tplFinish = tplNextPipe;
+                    TplFinish = TplNextPipe;
                 }
                 else
                 {
-                    tplFinish = tplNextClose;
+                    TplFinish = TplNextClose;
                 }
 
-                if (tplStart != -1 && tplFinish != -1 && tplFinish > tplStart)
+                if (TplStart != -1 && TplFinish != -1 && TplFinish > TplStart)
                 {
-                    Templates.Add(Article.Substring(tplStart + 2, tplFinish - tplStart - 2).ToLower().Trim());
-                    tplStart = Article.IndexOf("{{", tplFinish, StringComparison.Ordinal);
+                    string[] thisTemplate = new string[2];
+                    
+                    thisTemplate[0] = Article.Substring(TplStart + 2, TplFinish - TplStart - 2).ToLower().Trim();
+                    thisTemplate[1] = getFullTemplate(TplStart);
+                        TemplatesUsed.Add(thisTemplate);
+
+
+                    TplStart = Article.IndexOf("{{", TplFinish, StringComparison.Ordinal);
                 }
                 else
                 {
                     WikipediaErrors.UnbalancedTemplateBrackets();
-                    tplStart = -99;
+                    TplStart = -99;
                 }
             }
         }
@@ -336,6 +342,55 @@ namespace WikiAccess
             Logs.Add(APIErrors);
             Logs.Add(WikipediaErrors);
             return Logs;
+        }
+
+        private string getFullTemplate(int startpoint)
+        {
+            int Endpoint = 0;
+            int LeftBraceCount = 0;
+            int RightBraceCount = 0;
+
+            /* There might be a template within the template, so we just cant search for next }}
+            * instead I count all further occurances of {{ or }}, when they balance I have the full original template.
+            * In case the template is {{{{Hello}}wave}} I do an i++ to avoid matching 2+3 bracket.  */
+            for (int i = startpoint; i < Article.Length - 1; i++)
+            {
+                if (Article.Substring(i, 2) == "{{")
+                {
+                    LeftBraceCount++;
+                    i++;
+                }
+                if (Article.Substring(i, 2) == "}}")
+                {
+                    RightBraceCount++;
+                    i++;
+                }
+
+                if (LeftBraceCount == RightBraceCount)
+                {
+                    Endpoint = i;
+                    break;
+                }
+            }
+
+            string TemplateText = "";
+
+            if (LeftBraceCount != RightBraceCount)
+            {
+                int PipePos = Article.IndexOf("|",startpoint);
+                WikipediaErrors.UnableToExtractTemplate(Article.Substring(startpoint+2,PipePos-startpoint-2));
+                return null;
+            }
+
+            if (DelinkText(Article.Substring(startpoint + 2, Endpoint - startpoint - 3), out TemplateText))
+            {
+                return TemplateText;
+            }
+            else
+            {
+                return null;
+            }
+
         }
     }
 }
