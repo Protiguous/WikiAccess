@@ -15,6 +15,17 @@ namespace WikiAccess
         public Wikidate() { }
         public DateTime thisDate { get; set; }
         public DatePrecision thisPrecision { get; set; }
+        public int Year
+        {
+            get
+            {
+                if (isCalculable(thisPrecision))
+                    return thisDate.Year;
+                else
+                    return 0;
+            }
+        }
+
 
         public override string ToString()
         {

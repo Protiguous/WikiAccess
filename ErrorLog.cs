@@ -15,11 +15,11 @@ namespace WikiAccess
 /*
  * A = WikimediaAPI
  * B = WikidataBiography
- * C = Category
+ * C = Category (cf Wikipedia)
  * D = WikidataIO
  * E = WikidataExtract
  * G = WikipediaBiography
  * T = Template
  * W = WikipediaIO
- * 
+ * Y = Category (cf Wikidata)
  */
