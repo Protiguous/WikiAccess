@@ -1,83 +1,76 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Collections;
+﻿namespace WikiAccess {
 
-namespace WikiAccess
-{
-    public enum ClaimType { @null, @string, @int, @DateTime }
+	using System;
 
-    /// <summary>
-    /// Container to hold a Wikidata claim. 
-    /// </summary>
-    public class WikidataClaim
-    {
-        private string _ValueAsString;
-        private int _ValueAsInt;
-        private Wikidate _ValueAsDateTime;
+	public enum ClaimType {
 
-        public int Qcode { get; set; }
-        public int Pcode { get; set; }
-        public ClaimType Type { private set; get; }
-        public Wikidate ValueAsDateTime
-        {
-            get
-            {
-                return _ValueAsDateTime;
-            }
-            set
-            {
-                _ValueAsDateTime = value;
-                Type = ClaimType.DateTime;
-            }
-        }
+		Null,
 
-        public string ValueAsString
-        {
-            get
-            {
-                return _ValueAsString;
-            }
-            set
-            {
-                _ValueAsString = value;
-                Type = ClaimType.@string;
-            }
-        }
+		String,
 
-        public int ValueAsInt
-        {
-            get
-            {
-                return _ValueAsInt;
-            }
-            set
-            {
-                _ValueAsInt = value;
-                Type = ClaimType.@int;
-            }
-        }
+		Int,
 
-        public WikidataClaim()
-        {
-            _ValueAsDateTime = new Wikidate();
-            Type = new ClaimType();
-            Qcode = 0;
-        }
-        public override string ToString()
-        {
-            switch (Type)
-            {
-                case ClaimType.DateTime:
-                    return ValueAsDateTime.ToString();
-                case ClaimType.@int:
-                    return ValueAsInt.ToString();
-                default:
-                    return ValueAsString;
-            }
-        }
-    }
+		DateTime
+	}
+
+	/// <summary>
+	///     Container to hold a Wikidata claim.
+	/// </summary>
+	public class WikidataClaim {
+
+		private Wikidate _valueAsDateTime;
+
+		private Int32 _valueAsInt;
+
+		private String _valueAsString;
+
+		public Int32 Pcode { get; set; }
+
+		public Int32 Qcode { get; set; }
+
+		public ClaimType Type { private set; get; }
+
+		public Wikidate ValueAsDateTime {
+			get => this._valueAsDateTime;
+
+			set {
+				this._valueAsDateTime = value;
+				this.Type = ClaimType.DateTime;
+			}
+		}
+
+		public Int32 ValueAsInt {
+			get => this._valueAsInt;
+
+			set {
+				this._valueAsInt = value;
+				this.Type = ClaimType.Int;
+			}
+		}
+
+		public String ValueAsString {
+			get => this._valueAsString;
+
+			set {
+				this._valueAsString = value;
+				this.Type = ClaimType.String;
+			}
+		}
+
+		public WikidataClaim() {
+			this._valueAsDateTime = new Wikidate();
+			this.Type = new ClaimType();
+			this.Qcode = 0;
+		}
+
+		public override String ToString() {
+			switch ( this.Type ) {
+				case ClaimType.DateTime: return this.ValueAsDateTime.ToString();
+
+				case ClaimType.Int: return this.ValueAsInt.ToString();
+
+				default: return this.ValueAsString;
+			}
+		}
+	}
 }
-
-

@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿namespace WikiAccess {
 
-namespace WikiAccess
-{
-    public interface ErrorLog
-    {
-        string Module { get; }
-        List<ErrorMessage> Errors { get; set; }
-    }
+	using System;
+	using System.Collections.Generic;
+
+	public interface IErrorLog {
+
+		List<ErrorMessage> Errors { get; set; }
+
+		String Module { get; }
+	}
 }
 
 /*

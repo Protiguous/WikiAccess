@@ -1,109 +1,97 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.IO;
-using System.Text;
-using System.Threading;
-using System.Web;
+﻿namespace WikiAccess {
 
-namespace WikiAccess
-{
-    /// <summary>
-    /// Abstract class that does the actual call to the Wiki websites.
-    /// Must set Target Framework to .NET framework 4 (not client profile)
-    /// if you are using this in your own project, please change BOTNAME and CONTACT below
-    /// </summary>
-    public abstract class WikimediaApi
-    {
-        private int _Second = 0;
-        private const string BOTNAME = "Perigliobot";
-        private const string CONTACT = "Wikidata@lynxmail.co.uk";
+	using System;
+	using System.IO;
+	using System.Net;
+	using System.Threading;
 
-        protected WikiMediaApiErrorLog APIErrors { get; set; }
+	/// <summary>
+	///     Abstract class that does the actual call to the Wiki websites.
+	///     Must set Target Framework to .NET framework 4 (not client profile)
+	///     if you are using this in your own project, please change BOTNAME and CONTACT below
+	/// </summary>
+	public abstract class WikimediaApi {
 
-        protected string Content { get; private set; }
+		private Int32 _second;
 
-        protected abstract string APIurl { get; }
-        protected abstract string Parameters { get; }
+		protected WikiMediaApiErrorLog ApiErrors { get; set; }
 
-        public WikimediaApi()
-        {
-            APIErrors = new WikiMediaApiErrorLog();
-        }
+		protected abstract String ApIurl { get; }
 
-        /// <summary>
-        /// Make sure we wait a second between calls.
-        /// This simple method only throttles fast running scripts allowing slower ones to run at full speed.
-        /// </summary>
-        private void ThrottleWikiAccess()
-        {
-            if (DateTime.Now.Second == _Second)
-            {
-                Thread.Sleep(1000);
-            }
-            _Second = DateTime.Now.Second;
-        }
+		protected String Content { get; private set; }
 
-        /// <summary>
-        /// Method used to grab page from Wiki website, and store into Content property.
-        /// </summary>
-        /// <returns></returns>
-        protected bool GrabPage()
-        {
-            ThrottleWikiAccess();
-            return LoadPage(DownloadPage());
-        }
+		protected abstract String Parameters { get; }
 
-        /// <summary>
-        /// Read page from download, store in Content property
-        /// </summary>
-        /// <param name="tempfile"></param>
-        private bool LoadPage(string tempfile)
-        {
-            if (tempfile == null)
-            {
-                return false;
-            }
-            else
-            {
-                try
-                {
-                    Content = File.ReadAllText(tempfile);
-                    File.Delete(tempfile);
-                }
-                catch (Exception e)
-                {
-                    APIErrors.UnableToRetrieveDownload(e.Message);
-                    return false;
-                }
-                return true;
-            }
-        }
+		private const String Botname = "Perigliobot";
 
-        /// <summary>
-        /// Download page from Wiki web site into temp file
-        /// </summary>
-        /// <returns>Temp file name</returns>
-        private string DownloadPage()
-        {
-            string Tempfile = Path.GetTempFileName();
+		private const String Contact = "Wikidata@lynxmail.co.uk";
 
-            WebClient wikiClient = new WebClient();
-            wikiClient.Headers.Add("user-agent", BOTNAME + " Contact: " + CONTACT + ")");
-            string FullURL = APIurl + Parameters;
+		public WikimediaApi() => this.ApiErrors = new WikiMediaApiErrorLog();
 
-            try
-            {
-                wikiClient.DownloadFile(FullURL, Tempfile);
-            }
-            catch(WebException e)
-            {
-                Tempfile = null;
-                APIErrors.CannotAccessWiki(FullURL,e.Message);
-            }
+		/// <summary>
+		///     Download page from Wiki web site into temp file
+		/// </summary>
+		/// <returns>Temp file name</returns>
+		private String DownloadPage() {
+			var tempfile = Path.GetTempFileName();
 
-            return Tempfile;
-        }
-    }
+			var wikiClient = new WebClient();
+			wikiClient.Headers.Add( "user-agent", Botname + " Contact: " + Contact + ")" );
+			var fullUrl = this.ApIurl + this.Parameters;
+
+			try {
+				wikiClient.DownloadFile( fullUrl, tempfile );
+			}
+			catch ( WebException e ) {
+				tempfile = null;
+				this.ApiErrors.CannotAccessWiki( fullUrl, e.Message );
+			}
+
+			return tempfile;
+		}
+
+		/// <summary>
+		///     Read page from download, store in Content property
+		/// </summary>
+		/// <param name="tempfile"></param>
+		private Boolean LoadPage( String tempfile ) {
+			if ( tempfile == null ) {
+				return false;
+			}
+
+			try {
+				this.Content = File.ReadAllText( tempfile );
+				File.Delete( tempfile );
+			}
+			catch ( Exception e ) {
+				this.ApiErrors.UnableToRetrieveDownload( e.Message );
+
+				return false;
+			}
+
+			return true;
+		}
+
+		/// <summary>
+		///     Make sure we wait a second between calls.
+		///     This simple method only throttles fast running scripts allowing slower ones to run at full speed.
+		/// </summary>
+		private void ThrottleWikiAccess() {
+			if ( DateTime.Now.Second == this._second ) {
+				Thread.Sleep( 1000 );
+			}
+
+			this._second = DateTime.Now.Second;
+		}
+
+		/// <summary>
+		///     Method used to grab page from Wiki website, and store into Content property.
+		/// </summary>
+		/// <returns></returns>
+		protected Boolean GrabPage() {
+			this.ThrottleWikiAccess();
+
+			return this.LoadPage( this.DownloadPage() );
+		}
+	}
 }

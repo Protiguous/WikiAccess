@@ -1,72 +1,86 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿namespace WikiAccess {
 
-namespace WikiAccess
-{
-    /// <summary>
-    /// General interface to Wikidata
-    /// </summary>
-    public class WikidataIO : WikimediaApi
-    {
-        protected override string APIurl { get { return @"http://www.Wikidata.org/w/api.php?"; } }
-        protected override string Parameters
-        {
-            get
-            {
-                string Param = "action=" + Action;
-                if (Format != "") Param += "&format=" + Format;
-                if (Sites != "") Param += "&sites=" + Sites;
-                if (Ids != 0) Param += "&ids=Q" + Ids.ToString();
-                if (Props != "") Param += "&props=" + Props;
-                if (Languages != "") Param += "&languages=" + Languages;
+	using System;
+	using System.Collections.Generic;
 
-                return Param;
-            }
-        }
-        private WikidataIOErrorLog WikidataErrors { get; set; }
-        private ErrorLog ExternalErrors { get; set; }
+	/// <summary>
+	///     General interface to Wikidata
+	/// </summary>
+	public class WikidataIO : WikimediaApi {
 
-        public string Action { get; set; }
-        public string Format { get; set; }
-        public string Sites { get; set; }
-        public int Ids { get; set; }
-        public string Props { get; set; }
-        public string Languages { get; set; }
-        public string[] ClaimsRequired { get; set; }
+		private IErrorLog ExternalErrors { get; set; }
 
-        public WikidataIO()
-            : base()
-        {
-            WikidataErrors = new WikidataIOErrorLog();
-        }
+		private WikidataIOErrorLog WikidataErrors { get; }
 
-        public WikidataFields GetData()
-        {
-            if (GrabPage())
-            {
-                WikidataExtract Item = new WikidataExtract(Content, ClaimsRequired);
-                ExternalErrors = Item.WikidataExtractErrors;
-                if (Item.Success)
-                    return Item.Fields;
-                else
-                    return null;
-            }
-            else
-            {
-                WikidataErrors.UnableToRetrieveData();
-                return null;
-            }
-        }
+		protected override String ApIurl => @"http://www.Wikidata.org/w/api.php?";
 
-        public List<ErrorLog> GetErrors()
-        {
-            List<ErrorLog> Logs = new List<ErrorLog>();
-            Logs.Add(APIErrors);
-            Logs.Add(WikidataErrors);
-            Logs.Add(ExternalErrors);
-            return Logs;
-        }
-    }
+		protected override String Parameters {
+			get {
+				var param = "action=" + this.Action;
+
+				if ( this.Format != "" ) {
+					param += "&format=" + this.Format;
+				}
+
+				if ( this.Sites != "" ) {
+					param += "&sites=" + this.Sites;
+				}
+
+				if ( this.Ids != 0 ) {
+					param += "&ids=Q" + this.Ids;
+				}
+
+				if ( this.Props != "" ) {
+					param += "&props=" + this.Props;
+				}
+
+				if ( this.Languages != "" ) {
+					param += "&languages=" + this.Languages;
+				}
+
+				return param;
+			}
+		}
+
+		public String Action { get; set; }
+
+		public String[] ClaimsRequired { get; set; }
+
+		public String Format { get; set; }
+
+		public Int32 Ids { get; set; }
+
+		public String Languages { get; set; }
+
+		public String Props { get; set; }
+
+		public String Sites { get; set; }
+
+		public WikidataIO() => this.WikidataErrors = new WikidataIOErrorLog();
+
+		public WikidataFields GetData() {
+			if ( this.GrabPage() ) {
+				var item = new WikidataExtract( this.Content, this.ClaimsRequired );
+				this.ExternalErrors = item.WikidataExtractErrors;
+
+				if ( item.Success ) {
+					return item.Fields;
+				}
+
+				return null;
+			}
+
+			this.WikidataErrors.UnableToRetrieveData();
+
+			return null;
+		}
+
+		public List<IErrorLog> GetErrors() {
+			var logs = new List<IErrorLog> {
+				this.ApiErrors, this.WikidataErrors, this.ExternalErrors
+			};
+
+			return logs;
+		}
+	}
 }

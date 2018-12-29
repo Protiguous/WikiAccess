@@ -1,396 +1,380 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Web;
-using System.Xml;
+﻿namespace WikiAccess {
 
-namespace WikiAccess
-{
-    /// <summary>
-    /// Class to retrieve a Wikipedia page
-    /// </summary>
-    public class WikipediaIO : WikimediaApi
-    {
-        protected override string APIurl { get { return @"http://en.wikipedia.org/w/api.php?"; } }
-        protected override string Parameters
-        {
-            get
-            {
-                string Param = "action=" + Action;
-                if (Titles != "") Param += "&titles=" + HttpUtility.UrlEncode(Titles);
-                if (Format != "") Param += "&format=" + Format;
-                if (Redirects != "") Param += "&redirects";
-                if (Export != "") Param += "&export";
-                if (ExportNoWrap != "") Param += "&exportnowrap";
+	using System;
+	using System.Collections.Generic;
+	using System.IO;
+	using System.Web;
+	using System.Xml;
 
-                return Param;
-            }
-        }
+	/// <summary>
+	///     Class to retrieve a Wikipedia page
+	/// </summary>
+	public class WikipediaIO : WikimediaApi {
 
-        public List<string[]> TemplatesUsed;
-        public List<string> CategoriesUsed;
+		public List<String> CategoriesUsed;
 
-        public string Article { get; set; }
-        public string Action { get; set; }
-        public string Titles { get; set; }
-        public string Format { get; set; }
-        public string Redirects { get; set; }
-        public string Export { get; set; }
-        public string ExportNoWrap { get; set; }
-        public string PageTitle { get; set; }
-        private WikipediaIOErrorLog WikipediaErrors { get; set; }
+		public List<String[]> TemplatesUsed;
 
-        public WikipediaIO()
-            : base()
-        {
-            WikipediaErrors = new WikipediaIOErrorLog();
-            TemplatesUsed = new List<string[]>();
-            CategoriesUsed = new List<string>();
-        }
+		private WikipediaIOErrorLog WikipediaErrors { get; }
 
-        /// <summary>
-        /// Download a page from Wikipedia and process
-        /// </summary>
-        /// <returns>True = success</returns>
-        public bool GetData()
-        {
-            if (GrabPage())
-            {
-                if (ExtractXML())
-                {
-                    ExtractCategories();
-                    ExtractTemplates();
-                    return true;
-                }
-                else
-                {
-                    WikipediaErrors.UnableToParseXML();
-                    return false;
-                }
-            }
-            else
-            {
-                WikipediaErrors.UnableToRetrieveData();
-                return false;
-            }
-        }
+		protected override String ApIurl => @"http://en.wikipedia.org/w/api.php?";
 
-        /// <summary>
-        /// Extract the article from the downloaded XML content
-        /// </summary>
-        /// <returns></returns>
-        private bool ExtractXML()
-        {
-            bool WikipediaArticleExists = false;
+		protected override String Parameters {
+			get {
+				var param = "action=" + this.Action;
 
-            using (XmlReader Reader = XmlReader.Create(new StringReader(Content)))
-            {
-                string[] thisElementName = new string[5];
-                while (Reader.Read())
-                {
-                    switch (Reader.NodeType)
-                    {
-                        case XmlNodeType.Element:
-                            thisElementName[Reader.Depth] = Reader.Name;
-                            break;
+				if ( this.Titles != "" ) {
+					param += "&titles=" + HttpUtility.UrlEncode( this.Titles );
+				}
 
-                        case XmlNodeType.Text:
-                            if (thisElementName[0] == "mediawiki")
-                            {
-                                if (thisElementName[1] == "page")
-                                {
-                                    if (thisElementName[2] == "title")
-                                    {
-                                        PageTitle = Reader.Value;
-                                    }
+				if ( this.Format != "" ) {
+					param += "&format=" + this.Format;
+				}
 
-                                    if (thisElementName[2] == "revision")
-                                    {
-                                        if (thisElementName[3] == "text")
-                                        {
-                                            WikipediaArticleExists = true;
-                                            Article = RemoveHTMLcomments(ReplaceDash(RemoveTerminators(Reader.Value)));
-                                        }
-                                    }
+				if ( this.Redirects != "" ) {
+					param += "&redirects";
+				}
 
-                                }
-                            }
-                            break;
-                    }
-                }
+				if ( this.Export != "" ) {
+					param += "&export";
+				}
 
-                if (!WikipediaArticleExists)
-                {
-                    WikipediaErrors.ArticleNotExists();
-                    return false;
-                }
-                else
-                    return true;
-            }
-        }
+				if ( this.ExportNoWrap != "" ) {
+					param += "&exportnowrap";
+				}
 
-        private string RemoveHTMLcomments(string OriginalText)
-        {
-            string ThisText = OriginalText;
-            int CommentStart = 0;
+				return param;
+			}
+		}
 
-            do
-            {
-                CommentStart = ThisText.IndexOf("<!--", StringComparison.Ordinal);
-                if (CommentStart != -1)
-                {
-                    int CommentEnd = ThisText.IndexOf("-->", CommentStart + 3, StringComparison.Ordinal);
+		public String Action { get; set; }
 
-                    if (CommentEnd == -1 || CommentEnd < CommentStart)
-                    {
-                        WikipediaErrors.UnbalancedHTMLcomment();
-                        return ThisText;
-                    }
-                    else
-                    {
-                        string Comment = ThisText.Substring(CommentStart, CommentEnd - CommentStart + 3);
-                        ThisText = ThisText.Replace(Comment, "");
-                    }
-                }
+		public String Article { get; set; }
 
-            } while (CommentStart != -1);
+		public String Export { get; set; }
 
-            return ThisText;
-        }
+		public String ExportNoWrap { get; set; }
 
-        private string RemoveTerminators(string originalText)
-        {
-            string newText = originalText;
-            newText = newText.Replace("\u000a", string.Empty);
-            newText = newText.Replace("\u000b", string.Empty);
-            newText = newText.Replace("\u000c", string.Empty);
-            newText = newText.Replace("\u000d", string.Empty);
-            newText = newText.Replace("\u0085", string.Empty);
-            newText = newText.Replace("\u2028", string.Empty);
-            newText = newText.Replace("\u2029", string.Empty);
-            return newText;
-        }
+		public String Format { get; set; }
 
-        private string ReplaceDash(string original)
-        {
-            string Output = original;
+		public String PageTitle { get; set; }
 
-            Output = Output.Replace("\u058A", "-");
-            Output = Output.Replace("\u05BE", "-");
-            Output = Output.Replace("\u1400", "-");
-            Output = Output.Replace("\u1806", "-");
-            Output = Output.Replace("\u2010", "-");
+		public String Redirects { get; set; }
 
-            Output = Output.Replace("\u2011", "-");
-            Output = Output.Replace("\u2012", "-");
-            Output = Output.Replace("\u2013", "-");
-            Output = Output.Replace("\u2014", "-");
-            Output = Output.Replace("\u2015", "-");
+		public String Titles { get; set; }
 
-            Output = Output.Replace("\u2E17", "-");
-            Output = Output.Replace("\u2E1A", "-");
-            Output = Output.Replace("\u2E3A", "-");
-            Output = Output.Replace("\u2E3B", "-");
-            Output = Output.Replace("\u301C", "-");
+		public WikipediaIO() {
+			this.WikipediaErrors = new WikipediaIOErrorLog();
+			this.TemplatesUsed = new List<String[]>();
+			this.CategoriesUsed = new List<String>();
+		}
 
-            Output = Output.Replace("\u3030", "-");
-            Output = Output.Replace("\u30A0", "-");
-            Output = Output.Replace("\uFE31", "-");
-            Output = Output.Replace("\uFE32", "-");
-            Output = Output.Replace("\uFE58", "-");
+		private void ExtractCategories() {
+			var catStart = this.Article.IndexOf( "[[Category:", StringComparison.Ordinal );
 
-            Output = Output.Replace("\uFE63", "-");
-            Output = Output.Replace("\uFF0D", "-");
+			while ( catStart > 0 ) {
+				var catNextPipe = this.Article.IndexOf( "|", catStart, StringComparison.Ordinal );
+				var catNextClose = this.Article.IndexOf( "]]", catStart, StringComparison.Ordinal );
+				var catFinish = 0;
 
-            return Output;
-        }
+				if ( catNextPipe < catNextClose && catNextPipe > 0 ) {
+					catFinish = catNextPipe;
+				}
+				else {
+					catFinish = catNextClose;
+				}
 
-        private void ExtractCategories()
-        {
-            int catStart = Article.IndexOf("[[Category:", StringComparison.Ordinal);
+				if ( catStart != -1 && catFinish != -1 && catFinish > catStart ) {
+					this.CategoriesUsed.Add( this.Article.Substring( catStart + 11, catFinish - catStart - 11 ).ToLower().Trim() );
+					catStart = this.Article.IndexOf( "[[Category:", catFinish, StringComparison.Ordinal );
+				}
+				else {
+					this.WikipediaErrors.UnbalancedCategoryBrackets();
+					catStart = -99;
+				}
+			}
+		}
 
-            while (catStart > 0)
-            {
-                int catNextPipe = Article.IndexOf("|", catStart, StringComparison.Ordinal);
-                int catNextClose = Article.IndexOf("]]", catStart, StringComparison.Ordinal);
-                int catFinish = 0;
+		private void ExtractTemplates() {
+			var tplStart = this.Article.IndexOf( "{{", StringComparison.Ordinal );
 
-                if (catNextPipe < catNextClose && catNextPipe > 0)
-                {
-                    catFinish = catNextPipe;
-                }
-                else
-                {
-                    catFinish = catNextClose;
-                }
+			while ( tplStart >= 0 ) {
+				var tplNextPipe = this.Article.IndexOf( "|", tplStart, StringComparison.Ordinal );
+				var tplNextClose = this.Article.IndexOf( "}}", tplStart, StringComparison.Ordinal );
+				var tplFinish = 0;
 
-                if (catStart != -1 && catFinish != -1 && catFinish > catStart)
-                {
-                    CategoriesUsed.Add(Article.Substring(catStart + 11, catFinish - catStart - 11).ToLower().Trim());
-                    catStart = Article.IndexOf("[[Category:", catFinish, StringComparison.Ordinal);
-                }
-                else
-                {
-                    WikipediaErrors.UnbalancedCategoryBrackets();
-                    catStart = -99;
-                }
-            }
-        }
+				if ( tplNextPipe < tplNextClose && tplNextPipe > 0 ) {
+					tplFinish = tplNextPipe;
+				}
+				else {
+					tplFinish = tplNextClose;
+				}
 
-        private void ExtractTemplates()
-        {
-            int TplStart = Article.IndexOf("{{", StringComparison.Ordinal);
+				if ( tplStart != -1 && tplFinish != -1 && tplFinish > tplStart ) {
+					var thisTemplate = new String[ 2 ];
 
-            while (TplStart >= 0)
-            {
-                int TplNextPipe = Article.IndexOf("|", TplStart, StringComparison.Ordinal);
-                int TplNextClose = Article.IndexOf("}}", TplStart, StringComparison.Ordinal);
-                int TplFinish = 0;
+					thisTemplate[ 0 ] = this.Article.Substring( tplStart + 2, tplFinish - tplStart - 2 ).ToLower().Trim();
+					thisTemplate[ 1 ] = this.GetFullTemplate( tplStart );
+					this.TemplatesUsed.Add( thisTemplate );
 
-                if (TplNextPipe < TplNextClose && TplNextPipe > 0)
-                {
-                    TplFinish = TplNextPipe;
-                }
-                else
-                {
-                    TplFinish = TplNextClose;
-                }
+					tplStart = this.Article.IndexOf( "{{", tplFinish, StringComparison.Ordinal );
+				}
+				else {
+					this.WikipediaErrors.UnbalancedTemplateBrackets();
+					tplStart = -99;
+				}
+			}
+		}
 
-                if (TplStart != -1 && TplFinish != -1 && TplFinish > TplStart)
-                {
-                    string[] thisTemplate = new string[2];
-                    
-                    thisTemplate[0] = Article.Substring(TplStart + 2, TplFinish - TplStart - 2).ToLower().Trim();
-                    thisTemplate[1] = getFullTemplate(TplStart);
-                        TemplatesUsed.Add(thisTemplate);
+		/// <summary>
+		///     Extract the article from the downloaded XML content
+		/// </summary>
+		/// <returns></returns>
+		private Boolean ExtractXML() {
+			var wikipediaArticleExists = false;
 
+			using ( var reader = XmlReader.Create( new StringReader( this.Content ) ) ) {
+				var thisElementName = new String[ 5 ];
 
-                    TplStart = Article.IndexOf("{{", TplFinish, StringComparison.Ordinal);
-                }
-                else
-                {
-                    WikipediaErrors.UnbalancedTemplateBrackets();
-                    TplStart = -99;
-                }
-            }
-        }
-        /// <summary>
-        /// Function to remove Wikipedia style [[links]]
-        /// </summary>
-        /// <param name="OriginalText"></param>
-        /// <param name="RevisedText"></param>
-        /// <returns></returns>
-        public static bool DelinkText(string OriginalText, out string RevisedText)
-        {
-            string thisText = OriginalText;
+				while ( reader.Read() ) {
+					switch ( reader.NodeType ) {
+						case XmlNodeType.Element:
+							thisElementName[ reader.Depth ] = reader.Name;
 
-            int linkStart = 0;
+							break;
 
-            // Look for first [[ and ]], replace them with text
-            // repeat until no more [[ or ]]
-            do
-            {
-                linkStart = thisText.IndexOf("[[", StringComparison.Ordinal);
-                if (linkStart != -1)
-                {
-                    //Found start
-                    int linkEnd = thisText.IndexOf("]]", StringComparison.Ordinal);
+						case XmlNodeType.Text:
 
-                    if (linkEnd == -1 || linkEnd < linkStart)
-                    {
-                        //Did not find close
-                        RevisedText = OriginalText;
-                        return false;
-                    }
-                    else
-                    {
-                        // Found link, extract text
-                        string link = thisText.Substring(linkStart, linkEnd - linkStart + 2);
-                        string newlink = link.Substring(2, link.Length - 4);
+							if ( thisElementName[ 0 ] == "mediawiki" ) {
+								if ( thisElementName[ 1 ] == "page" ) {
+									if ( thisElementName[ 2 ] == "title" ) {
+										this.PageTitle = reader.Value;
+									}
 
-                        // If its piped, remove left side
-                        int pipe = newlink.IndexOf("|", StringComparison.Ordinal);
-                        if (pipe != -1)
-                        {
-                            newlink = newlink.Substring(pipe + 1);
-                        }
-                        // Replace [[link]] with newlink
-                        thisText = thisText.Replace(link, newlink);
-                    }
-                }
-                else
-                {
-                    //Did not find a [[, probably finished
-                    //but first check there are no closing ]]
-                    int linkClose = thisText.IndexOf("]]", StringComparison.Ordinal);
-                    if (linkClose != -1)
-                    {
-                        RevisedText = OriginalText;
-                        return false;
-                    }
-                }
+									if ( thisElementName[ 2 ] == "revision" ) {
+										if ( thisElementName[ 3 ] == "text" ) {
+											wikipediaArticleExists = true;
+											this.Article = this.RemoveHtmLcomments( this.ReplaceDash( this.RemoveTerminators( reader.Value ) ) );
+										}
+									}
+								}
+							}
 
-            } while (linkStart != -1);
+							break;
+					}
+				}
 
-            RevisedText = thisText;
-            return true;
-        }
+				if ( !wikipediaArticleExists ) {
+					this.WikipediaErrors.ArticleNotExists();
 
-        public List<ErrorLog> GetErrors()
-        {
-            List<ErrorLog> Logs = new List<ErrorLog>();
-            Logs.Add(APIErrors);
-            Logs.Add(WikipediaErrors);
-            return Logs;
-        }
+					return false;
+				}
 
-        private string getFullTemplate(int startpoint)
-        {
-            int Endpoint = 0;
-            int LeftBraceCount = 0;
-            int RightBraceCount = 0;
+				return true;
+			}
+		}
 
-            /* There might be a template within the template, so we just cant search for next }}
+		private String GetFullTemplate( Int32 startpoint ) {
+			var endpoint = 0;
+			var leftBraceCount = 0;
+			var rightBraceCount = 0;
+
+			/* There might be a template within the template, so we just cant search for next }}
             * instead I count all further occurances of {{ or }}, when they balance I have the full original template.
             * In case the template is {{{{Hello}}wave}} I do an i++ to avoid matching 2+3 bracket.  */
-            for (int i = startpoint; i < Article.Length - 1; i++)
-            {
-                if (Article.Substring(i, 2) == "{{")
-                {
-                    LeftBraceCount++;
-                    i++;
-                }
-                if (Article.Substring(i, 2) == "}}")
-                {
-                    RightBraceCount++;
-                    i++;
-                }
+			for ( var i = startpoint; i < this.Article.Length - 1; i++ ) {
+				if ( this.Article.Substring( i, 2 ) == "{{" ) {
+					leftBraceCount++;
+					i++;
+				}
 
-                if (LeftBraceCount == RightBraceCount)
-                {
-                    Endpoint = i;
-                    break;
-                }
-            }
+				if ( this.Article.Substring( i, 2 ) == "}}" ) {
+					rightBraceCount++;
+					i++;
+				}
 
-            string TemplateText = "";
+				if ( leftBraceCount == rightBraceCount ) {
+					endpoint = i;
 
-            if (LeftBraceCount != RightBraceCount)
-            {
-                int PipePos = Article.IndexOf("|",startpoint);
-                WikipediaErrors.UnableToExtractTemplate(Article.Substring(startpoint+2,PipePos-startpoint-2));
-                return null;
-            }
+					break;
+				}
+			}
 
-            if (DelinkText(Article.Substring(startpoint + 2, Endpoint - startpoint - 3), out TemplateText))
-            {
-                return TemplateText;
-            }
-            else
-            {
-                return null;
-            }
+			if ( leftBraceCount != rightBraceCount ) {
+				var pipePos = this.Article.IndexOf( "|", startpoint );
+				this.WikipediaErrors.UnableToExtractTemplate( this.Article.Substring( startpoint + 2, pipePos - startpoint - 2 ) );
 
-        }
-    }
+				return null;
+			}
+
+			if ( DelinkText( this.Article.Substring( startpoint + 2, endpoint - startpoint - 3 ), out var templateText ) ) {
+				return templateText;
+			}
+
+			return null;
+		}
+
+		private String RemoveHtmLcomments( String originalText ) {
+			var thisText = originalText;
+			var commentStart = 0;
+
+			do {
+				commentStart = thisText.IndexOf( "<!--", StringComparison.Ordinal );
+
+				if ( commentStart != -1 ) {
+					var commentEnd = thisText.IndexOf( "-->", commentStart + 3, StringComparison.Ordinal );
+
+					if ( commentEnd == -1 || commentEnd < commentStart ) {
+						this.WikipediaErrors.UnbalancedHtmLcomment();
+
+						return thisText;
+					}
+
+					var comment = thisText.Substring( commentStart, commentEnd - commentStart + 3 );
+					thisText = thisText.Replace( comment, "" );
+				}
+			} while ( commentStart != -1 );
+
+			return thisText;
+		}
+
+		private String RemoveTerminators( String originalText ) {
+			var newText = originalText;
+			newText = newText.Replace( "\u000a", String.Empty );
+			newText = newText.Replace( "\u000b", String.Empty );
+			newText = newText.Replace( "\u000c", String.Empty );
+			newText = newText.Replace( "\u000d", String.Empty );
+			newText = newText.Replace( "\u0085", String.Empty );
+			newText = newText.Replace( "\u2028", String.Empty );
+			newText = newText.Replace( "\u2029", String.Empty );
+
+			return newText;
+		}
+
+		private String ReplaceDash( String original ) {
+			var output = original;
+
+			output = output.Replace( "\u058A", "-" );
+			output = output.Replace( "\u05BE", "-" );
+			output = output.Replace( "\u1400", "-" );
+			output = output.Replace( "\u1806", "-" );
+			output = output.Replace( "\u2010", "-" );
+
+			output = output.Replace( "\u2011", "-" );
+			output = output.Replace( "\u2012", "-" );
+			output = output.Replace( "\u2013", "-" );
+			output = output.Replace( "\u2014", "-" );
+			output = output.Replace( "\u2015", "-" );
+
+			output = output.Replace( "\u2E17", "-" );
+			output = output.Replace( "\u2E1A", "-" );
+			output = output.Replace( "\u2E3A", "-" );
+			output = output.Replace( "\u2E3B", "-" );
+			output = output.Replace( "\u301C", "-" );
+
+			output = output.Replace( "\u3030", "-" );
+			output = output.Replace( "\u30A0", "-" );
+			output = output.Replace( "\uFE31", "-" );
+			output = output.Replace( "\uFE32", "-" );
+			output = output.Replace( "\uFE58", "-" );
+
+			output = output.Replace( "\uFE63", "-" );
+			output = output.Replace( "\uFF0D", "-" );
+
+			return output;
+		}
+
+		/// <summary>
+		///     Function to remove Wikipedia style [[links]]
+		/// </summary>
+		/// <param name="originalText"></param>
+		/// <param name="revisedText"></param>
+		/// <returns></returns>
+		public static Boolean DelinkText( String originalText, out String revisedText ) {
+			var thisText = originalText;
+
+			var linkStart = 0;
+
+			// Look for first [[ and ]], replace them with text
+			// repeat until no more [[ or ]]
+			do {
+				linkStart = thisText.IndexOf( "[[", StringComparison.Ordinal );
+
+				if ( linkStart != -1 ) {
+
+					//Found start
+					var linkEnd = thisText.IndexOf( "]]", StringComparison.Ordinal );
+
+					if ( linkEnd == -1 || linkEnd < linkStart ) {
+
+						//Did not find close
+						revisedText = originalText;
+
+						return false;
+					}
+
+					// Found link, extract text
+					var link = thisText.Substring( linkStart, linkEnd - linkStart + 2 );
+					var newlink = link.Substring( 2, link.Length - 4 );
+
+					// If its piped, remove left side
+					var pipe = newlink.IndexOf( "|", StringComparison.Ordinal );
+
+					if ( pipe != -1 ) {
+						newlink = newlink.Substring( pipe + 1 );
+					}
+
+					// Replace [[link]] with newlink
+					thisText = thisText.Replace( link, newlink );
+				}
+				else {
+
+					//Did not find a [[, probably finished
+					//but first check there are no closing ]]
+					var linkClose = thisText.IndexOf( "]]", StringComparison.Ordinal );
+
+					if ( linkClose != -1 ) {
+						revisedText = originalText;
+
+						return false;
+					}
+				}
+			} while ( linkStart != -1 );
+
+			revisedText = thisText;
+
+			return true;
+		}
+
+		/// <summary>
+		///     Download a page from Wikipedia and process
+		/// </summary>
+		/// <returns>True = success</returns>
+		public Boolean GetData() {
+			if ( this.GrabPage() ) {
+				if ( this.ExtractXML() ) {
+					this.ExtractCategories();
+					this.ExtractTemplates();
+
+					return true;
+				}
+
+				this.WikipediaErrors.UnableToParseXML();
+
+				return false;
+			}
+
+			this.WikipediaErrors.UnableToRetrieveData();
+
+			return false;
+		}
+
+		public List<IErrorLog> GetErrors() {
+			var logs = new List<IErrorLog> {
+				this.ApiErrors, this.WikipediaErrors
+			};
+
+			return logs;
+		}
+	}
 }

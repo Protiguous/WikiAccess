@@ -1,94 +1,83 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿namespace WikiAccess {
 
-namespace WikiAccess
-{
-    class WikiAccessSample
-    {
-        static void Main(string[] args)
-        {
-            int Qcode = 15818798; 
+	using System;
 
-            WikidataIO WIO = new WikidataIO();
-            WIO.Action = "wbgetentities";
-            WIO.Format = "json";
-            WIO.Sites = "";
-            WIO.Ids = Qcode;
-            WIO.Props = "claims|descriptions|labels|sitelinks";
-            WIO.Languages = "";
-            WIO.ClaimsRequired = new string[5] { "P31", "P27", "P21", "P569", "P570" };
+	internal class WikiAccessSample {
 
-            WikidataFields Fields = WIO.GetData();
+		private static void Main( String[] args ) {
+			var qcode = 15818798;
 
-            Console.WriteLine("-----Errors-----");
-            List<ErrorLog> Errors = new List<ErrorLog>();
-            Errors = WIO.GetErrors();
+			var wio = new WikidataIO {
+				Action = "wbgetentities",
+				Format = "json",
+				Sites = "",
+				Ids = qcode,
+				Props = "claims|descriptions|labels|sitelinks",
+				Languages = "",
+				ClaimsRequired = new String[ 5 ] {
+					"P31", "P27", "P21", "P569", "P570"
+				}
+			};
 
-            foreach (ErrorLog thisLog in Errors)
-            {
-                if (thisLog != null)
-                {
-                    foreach (ErrorMessage Error in thisLog.Errors)
-                    {
-                        Console.WriteLine(Error.ToString());
-                    }
-                }
-            }
+			var fields = wio.GetData();
 
+			Console.WriteLine( "-----Errors-----" );
+			var errors = wio.GetErrors();
 
-            if (Fields == null)
-                return;
+			foreach ( var thisLog in errors ) {
+				if ( thisLog != null ) {
+					foreach ( var error in thisLog.Errors ) {
+						Console.WriteLine( error.ToString() );
+					}
+				}
+			}
 
-            string ThisName;
-            if (!Fields.Labels.TryGetValue("en-gb", out ThisName))
-                Fields.Labels.TryGetValue("en", out ThisName);
+			if ( fields == null ) {
+				return;
+			}
 
-            string ThisDescription;
-            if (!Fields.Description.TryGetValue("en-gb", out ThisDescription))
-                Fields.Description.TryGetValue("en", out ThisDescription);
+			if ( !fields.Labels.TryGetValue( "en-gb", out var thisName ) ) {
+				fields.Labels.TryGetValue( "en", out thisName );
+			}
 
-            string ThisWikipedia;
-                Fields.WikipediaLinks.TryGetValue("enwiki", out ThisWikipedia);
+			if ( !fields.Description.TryGetValue( "en-gb", out var thisDescription ) ) {
+				fields.Description.TryGetValue( "en", out thisDescription );
+			}
 
-            Console.WriteLine(ThisName);
-            Console.WriteLine(ThisDescription);
+			fields.WikipediaLinks.TryGetValue( "enwiki", out var thisWikipedia );
 
-            Console.WriteLine("====================");
+			Console.WriteLine( thisName );
+			Console.WriteLine( thisDescription );
 
+			Console.WriteLine( "====================" );
 
-            WikipediaIO WPIO = new WikipediaIO();
-            WPIO.Action = "query";
-            WPIO.Export = "Yes";
-            WPIO.ExportNoWrap = "Yes";
-            WPIO.Format = "xml";
-            WPIO.Redirects = "yes";
-            WPIO.Titles = ThisWikipedia;
+			var wpio = new WikipediaIO {
+				Action = "query",
+				Export = "Yes",
+				ExportNoWrap = "Yes",
+				Format = "xml",
+				Redirects = "yes",
+				Titles = thisWikipedia
+			};
 
-            if (WPIO.GetData())
-            {
-                List<string[]> Templates = WPIO.TemplatesUsed;
-                List<string> Categories = WPIO.CategoriesUsed;
+			if ( wpio.GetData() ) {
+				var templates = wpio.TemplatesUsed;
+				var categories = wpio.CategoriesUsed;
 
-                Console.WriteLine(WPIO.PageTitle);
-                Console.WriteLine(Templates.Count().ToString() + " templates");
-                Console.WriteLine(Categories.Count().ToString() + " categories");
-            }
+				Console.WriteLine( wpio.PageTitle );
+				Console.WriteLine( $"{templates.Count} templates" );
+				Console.WriteLine( $"{categories.Count} categories" );
+			}
 
-            List<ErrorLog> Errors2 = new List<ErrorLog>();
-            Errors2 = WPIO.GetErrors();
+			var errors2 = wpio.GetErrors();
 
-            foreach (ErrorLog thisLog in Errors2)
-            {
-                if (thisLog != null)
-                {
-                    foreach (ErrorMessage Error in thisLog.Errors)
-                    {
-                        Console.WriteLine(Error.ToString());
-                    }
-                }
-            }
-        }
-    }
+			foreach ( var thisLog in errors2 ) {
+				if ( thisLog != null ) {
+					foreach ( var error in thisLog.Errors ) {
+						Console.WriteLine( error.ToString() );
+					}
+				}
+			}
+		}
+	}
 }

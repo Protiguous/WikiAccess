@@ -1,34 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿namespace WikiAccess {
 
-namespace WikiAccess
-{
-    public class ErrorMessage
-    {
-        public string Module { get; set; }
-        public int Code { get; set; }
-        public string Message { get; set; }
-        public string SystemMessage { get; set; }
+	using System;
 
-        public ErrorMessage(string module, int code, string message, string systemMessage = null)
-        {
-            Module = module;
-            Code = code;
-            Message = message;
-            SystemMessage = systemMessage;
-        }
+	public class ErrorMessage {
 
-        public override string ToString()
-        {
-            string ReturnMessage = Module + Code.ToString("000") + ": " + Message;
+		public Int32 Code { get; set; }
 
-            if (!string.IsNullOrWhiteSpace(SystemMessage))
-                ReturnMessage += " (" + SystemMessage + ")";
+		public String Message { get; set; }
 
-            return ReturnMessage;
-        }
-    }
+		public String Module { get; set; }
 
+		public String SystemMessage { get; set; }
+
+		public ErrorMessage( String module, Int32 code, String message, String systemMessage = null ) {
+			this.Module = module;
+			this.Code = code;
+			this.Message = message;
+			this.SystemMessage = systemMessage;
+		}
+
+		public override String ToString() {
+			var returnMessage = this.Module + this.Code.ToString( "000" ) + ": " + this.Message;
+
+			if ( !String.IsNullOrWhiteSpace( this.SystemMessage ) ) {
+				returnMessage += " (" + this.SystemMessage + ")";
+			}
+
+			return returnMessage;
+		}
+	}
 }
